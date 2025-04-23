@@ -9,7 +9,7 @@ import os
 
 app = Flask(__name__)
 
-# Configure logging
+
 def setup_logging():
     log_dir = 'logs'
     if not os.path.exists(log_dir):
@@ -17,10 +17,10 @@ def setup_logging():
     
     log_file = os.path.join(log_dir, 'flask.log')
     
-    # Set up root logger
+    
     logging.basicConfig(level=logging.INFO)
     
-    # Flask app logger
+  
     handler = RotatingFileHandler(
         filename=log_file,
         maxBytes=1024 * 1024,  # 1MB
@@ -31,20 +31,20 @@ def setup_logging():
     ))
     handler.setLevel(logging.INFO)
     
-    # Clear any existing handlers
+    
     app.logger.handlers.clear()
     app.logger.addHandler(handler)
     app.logger.setLevel(logging.INFO)
     
-    # Also log to console for development
+    # logging to console for dev purpose
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     app.logger.addHandler(console_handler)
 
-# Call the logging setup function before any routes are registered
+
 setup_logging()
 
-# Kafka Configuration
+
 kafka_config = {
     'bootstrap.servers': 'localhost:9092',
     'client.id': socket.gethostname()
@@ -55,7 +55,7 @@ KAFKA_TOPIC = 'temperature_readings_april19'
 
 @app.route('/temperature', methods=['POST'])
 def receive_temperature():
-    """Receive temperature data from M5Go device and forward to Kafka"""
+    
     app.logger.info("Received request to /temperature endpoint")
     app.logger.debug(f"Request headers: {request.headers}")
     app.logger.debug(f"Request data: {request.data}")
@@ -68,7 +68,6 @@ def receive_temperature():
         data = request.get_json()
         app.logger.debug(f"Parsed JSON data: {data}")
         
-        # Validate required fields
         required_fields = ['device_id', 'temperature', 'client_timestamp']
         for field in required_fields:
             if field not in data:
@@ -95,11 +94,10 @@ def receive_temperature():
         return jsonify({'error': f'Failed to process request: {str(e)}'}), 500
 
 def delivery_report(err, msg):
-    """Callback for message delivery reports"""
     if err is not None:
         app.logger.error(f'Message delivery failed: {err}')
     else:
-        app.logger.info(f'Message delivered to {msg.topic()} [{msg.partition()}] at offset {msg.partition()}')
+        app.logger.info(f'Message delivered to {msg.topic()} at partition [{msg.partition()}] at offset {msg.offset()}')
 
 if __name__ == '__main__':
     app.logger.info("Starting Flask application")
