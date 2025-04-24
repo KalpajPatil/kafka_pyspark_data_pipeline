@@ -1,0 +1,4 @@
+services:
+  spark_app:
+    build: .
+    image: spark_app
